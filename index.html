@@ -1,0 +1,1112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PTO &amp; Leave Tracker 2026</title>
+<meta name="description" content="Calendar-year leave planner: tracks vacation accrual, PTO and floating holiday grants, university holidays and winter closure, and suggests how many hours to use each month so none are lost.">
+<style>
+  :root {
+    --bg: #f6f7f9; --surface: #ffffff; --surface-2: #f1f3f6; --text: #1b2330; --muted: #5d6878;
+    --border: #dde2e9; --accent: #2f6fdf; --accent-ink: #ffffff;
+    --good: #1f8a5b; --good-bg: #e6f5ee; --warn: #b4560b; --warn-bg: #fdf0e3;
+    --bad: #c23a3a; --bad-bg: #fbeaea; --ghost: #c9d3e2; --lock: #6a4fc9; --lock-bg: #efeafd;
+    --radius: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12161d; --surface: #1a2029; --surface-2: #222a35; --text: #e7ebf1; --muted: #9aa6b6;
+      --border: #2e3846; --accent: #6c9cf0; --accent-ink: #0d1420;
+      --good: #4cc38a; --good-bg: #173226; --warn: #f0a35e; --warn-bg: #3a2814;
+      --bad: #f07878; --bad-bg: #3a1c1c; --ghost: #3a4658; --lock: #b39cf5; --lock-bg: #2a2342;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  h2 { font-size: 18px; margin: 0 0 4px; }
+  h3 { font-size: 16px; margin: 0; }
+  .sub, .hint { color: var(--muted); margin: 0; }
+  .hint { font-size: 13px; margin-bottom: 12px; }
+  header.top { display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; align-items: flex-end; margin-bottom: 20px; }
+  header.top .sub { max-width: 640px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  button, .btn { font: inherit; font-size: 14px; cursor: pointer; border: 1px solid var(--border); background: var(--surface);
+    color: var(--text); padding: 7px 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; }
+  button:hover, .btn:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  button.link { border: none; background: none; color: var(--muted); padding: 4px 6px; }
+  button.link:hover { color: var(--bad); }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 16px; }
+  .settings { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end; }
+  label.field { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+  input, select { font: inherit; font-size: 14px; color: var(--text); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px; min-width: 0; }
+  input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  input[type=number] { width: 100px; }
+  input:disabled { opacity: .45; }
+  .banner { border-radius: var(--radius); padding: 16px 18px; margin-bottom: 16px; border: 1px solid var(--border); background: var(--surface); }
+  .banner.warn { background: var(--warn-bg); border-color: transparent; }
+  .banner.good { background: var(--good-bg); border-color: transparent; }
+  .banner .big { font-size: 22px; font-weight: 700; }
+  .banner > div + div { margin-top: 4px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 16px; }
+  .sum { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; border-top: 4px solid var(--c, var(--accent)); }
+  .sum .num { font-size: 30px; font-weight: 700; line-height: 1.1; margin-top: 8px; }
+  .sum .unit { font-size: 15px; font-weight: 500; color: var(--muted); }
+  .sum .lbl { font-size: 13px; color: var(--muted); }
+  .sum ul { list-style: none; padding: 0; margin: 12px 0 0; font-size: 13px; display: grid; gap: 4px; }
+  .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; background: var(--surface-2); color: var(--muted); margin-left: 6px; vertical-align: 2px; }
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 99px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .pill.good { background: var(--good-bg); color: var(--good); }
+  .pill.warn { background: var(--warn-bg); color: var(--warn); }
+  .pill.bad { background: var(--bad-bg); color: var(--bad); }
+  .pill.muted { background: var(--surface-2); color: var(--muted); }
+  .pill.lock { background: var(--lock-bg); color: var(--lock); }
+  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 6px; background: var(--c); }
+  .table-wrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); font-weight: 600; }
+  td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+  tr.past td { color: var(--muted); }
+  td.neg { color: var(--bad); font-weight: 600; }
+  td.lost { color: var(--bad); }
+  td.sugg { font-weight: 600; color: var(--accent); }
+  td.wrapcell { white-space: normal; min-width: 160px; }
+  tfoot td { font-weight: 600; border-bottom: none; }
+  .add-row { margin-top: 12px; }
+  .plan-form { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-bottom: 12px; }
+  .plan-form input[type=text] { width: 200px; }
+  .empty { color: var(--muted); font-size: 14px; padding: 8px 0; }
+  .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-bottom: 12px; }
+  .stat-row { display: flex; flex-wrap: wrap; gap: 8px 24px; margin: 12px 0 0; font-size: 14px; }
+  .proj-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: baseline; margin-bottom: 8px; }
+  .chart { width: 100%; height: auto; display: block; margin: 8px 0 12px; }
+  .chart text { fill: var(--muted); font-size: 11px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 12px; color: var(--muted); }
+  .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; background: var(--sw); }
+  details summary { cursor: pointer; font-weight: 600; font-size: 18px; }
+  details[open] summary { margin-bottom: 8px; }
+  .notes { font-size: 14px; color: var(--muted); padding-left: 18px; margin: 8px 0 0; }
+  .notes li { margin-bottom: 6px; }
+  .daypick { display: flex; gap: 4px; }
+  .daypick label { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border: 1px solid var(--border);
+    border-radius: 8px; font-size: 13px; cursor: pointer; color: var(--muted); user-select: none; }
+  .daypick input { position: absolute; opacity: 0; pointer-events: none; }
+  .daypick label:has(input:checked) { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  .daypick label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .derived { font-size: 13px; color: var(--muted); align-self: center; }
+  .derived strong { color: var(--text); }
+  .cal { display: grid; grid-template-columns: repeat(var(--cols, 5), minmax(0, 1fr)); gap: 6px; margin: 12px 0; }
+  .cal .hd { font-size: 12px; font-weight: 600; color: var(--muted); text-align: center; text-transform: uppercase; letter-spacing: .04em; }
+  .cal .cell { border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px; min-height: 64px; font-size: 12px; background: var(--surface); }
+  .cal .cell .d { font-weight: 600; font-size: 13px; color: var(--text); }
+  .cal .cell.blank { border: none; background: none; }
+  .cal .cell.na { background: var(--surface-2); color: var(--muted); }
+  .cal .cell.off { border: 2px solid var(--c, var(--accent)); background: color-mix(in srgb, var(--c, var(--accent)) 10%, var(--surface)); }
+  .cal .cell .h { font-weight: 700; color: var(--c, var(--accent)); font-size: 14px; }
+  .cal .cell .tm { color: var(--muted); line-height: 1.3; }
+  .cap-sum { display: flex; flex-wrap: wrap; gap: 8px 28px; align-items: baseline; margin-top: 4px; }
+  .cap-sum .big { font-size: 26px; font-weight: 700; }
+  @media (max-width: 560px) { .cal .cell { padding: 4px; min-height: 56px; font-size: 11px; } .cal .cell .tm { display: none; } }
+  footer { color: var(--muted); font-size: 13px; text-align: center; margin-top: 24px; }
+  @media (max-width: 560px) { h1 { font-size: 22px; } .plan-form input[type=text] { width: 100%; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>PTO &amp; Leave Tracker <span id="yearTitle"></span></h1>
+      <p class="sub">A calendar-year leave planner. It tracks vacation accrual, PTO and floating holiday grants, university holidays and the winter closure, then tells you how many hours to use each month so none are lost.</p>
+    </div>
+    <div class="actions">
+      <button id="btnSample" type="button">Reset to 2026 defaults</button>
+      <button id="btnExport" type="button">Export data</button>
+      <label class="btn" for="fileImport">Import data</label>
+      <input id="fileImport" type="file" accept="application/json,.json" hidden>
+    </div>
+  </header>
+
+  <section class="card settings" aria-label="Settings">
+    <label class="field">Today's date (as of)
+      <input id="asOf" type="date">
+    </label>
+    <label class="field">Work starts <input id="sStart" type="time" step="900"></label>
+    <label class="field">Work ends <input id="sEnd" type="time" step="900"></label>
+    <label class="field">Unpaid lunch (min) <input id="sLunch" type="number" min="0" max="120" step="15" style="width:80px"></label>
+    <label class="field">Lunch starts <input id="sLunchStart" type="time" step="900"></label>
+    <div class="field" style="display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)">Workdays
+      <div class="daypick" id="sDays"></div>
+    </div>
+    <div class="derived" id="sDerived"></div>
+    <p class="hint" style="margin:0;flex-basis:100%">Earned hours post at the end of each month. PTO and floating holiday reset on Dec 31. Vacation stops accruing at its cap. Vacation accrual uses your paid hours per week.</p>
+  </section>
+
+  <div id="banner" class="banner" role="status" aria-live="polite"></div>
+  <div id="summary" class="grid"></div>
+
+  <div id="capPlanner"></div>
+
+  <section class="card" id="closureCard">
+    <h2>Winter closure <span class="pill lock">Hours locked</span></h2>
+    <p class="hint">Holidays and additional paid days need no leave. Every other closure workday is covered with your leave hours, and those hours are set aside so the monthly suggestions never spend them. Check each day's status against the official holiday schedule.</p>
+    <div class="row">
+      <label class="field">Closure starts <input id="cStart" type="date"></label>
+      <label class="field">Closure ends <input id="cEnd" type="date"></label>
+      <label class="field">Cover leave days with
+        <select id="cMode">
+          <option value="auto">Auto: use-it-or-lose-it hours first</option>
+          <option value="custom">Custom amounts</option>
+        </select>
+      </label>
+    </div>
+    <div id="cCustom"></div>
+    <div class="table-wrap" id="closureWrap"></div>
+    <div class="stat-row" id="closureStats"></div>
+  </section>
+
+  <section class="card">
+    <h2>Leave balances on Jan 1</h2>
+    <p class="hint">Enter each balance at the start of the year, including Jan 1 grants. Log time off below, and current balances are calculated for you.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Leave type</th><th class="n">Jan 1 balance (hrs)</th><th class="n">Accrual</th><th>Accrual unit</th><th class="n">Per month</th><th>Rule</th><th class="n">Cap (hrs)</th><th></th></tr></thead>
+        <tbody id="typesBody"></tbody>
+      </table>
+    </div>
+    <button id="addType" class="add-row" type="button">+ Add leave type</button>
+  </section>
+
+  <section class="card">
+    <h2>Time off log</h2>
+    <p class="hint">Add time off you've taken (counts as used) or scheduled (counts as planned). Weekends and university holidays in a date range are skipped automatically.</p>
+    <form id="planForm" class="plan-form">
+      <label class="field">Leave type <select id="pType" required></select></label>
+      <label class="field">From <input id="pStart" type="date" required></label>
+      <label class="field">To (optional) <input id="pEnd" type="date"></label>
+      <label class="field">Hours per day <input id="pHours" type="number" min="0.5" step="0.5" required></label>
+      <label class="field">Note <input id="pNote" type="text" maxlength="60" placeholder="e.g. Thanksgiving trip"></label>
+      <button class="primary" type="submit">Add</button>
+    </form>
+    <div class="table-wrap" id="plannedWrap"></div>
+  </section>
+
+  <div id="projections"></div>
+
+  <section class="card">
+    <details>
+      <summary>University holidays (<span id="holCount"></span>)</summary>
+      <p class="hint">Holidays are skipped when counting leave days and never need leave hours. Check these against the official university holiday schedule and edit as needed.</p>
+      <form id="holForm" class="plan-form">
+        <label class="field">Date <input id="hDate" type="date" required></label>
+        <label class="field">Name <input id="hName" type="text" maxlength="60" required placeholder="Holiday name"></label>
+        <button type="submit">Add holiday</button>
+      </form>
+      <div class="table-wrap" id="holWrap"></div>
+    </details>
+  </section>
+
+  <section class="card">
+    <h2>How the suggestions work</h2>
+    <ul class="notes">
+      <li><strong>Vacation accrual:</strong> rate × hours paid per week × 52 ÷ 12. At 0.07693 hrs per hour and 40 hrs/week, that's about 13.33 hrs/month, or roughly 160 hrs (20 days) a year. It stops at the 240-hr cap.</li>
+      <li><strong>Use it or lose it (PTO, floating holiday):</strong> takes the remaining balance, subtracts logged and locked hours, and spreads the rest over the remaining months of the year. Suggestions even out your total time off each month and never spend locked closure hours.</li>
+      <li><strong>Balance cap (vacation):</strong> suggests the minimum to use so the next month's accrual still fits under the cap. You can bank hours up to the cap, then use about one month's accrual each month after that.</li>
+      <li><strong>Cap planner:</strong> for each month at the cap, the minimum is rounded up to your chosen increment and placed on open workdays. Holidays, closure days and days you already have off are skipped. Partial days are shown as leaving early. For example, 5.5 hrs on an 8:30–5:00 day with a 30-minute lunch means leaving at 11:00 AM.</li>
+      <li><strong>Work schedule:</strong> paid hours per day = end − start − unpaid lunch. With 8:30 AM – 5:00 PM and a 30-minute lunch, that's 8 hrs/day and 40 hrs/week.</li>
+      <li><strong>Winter closure:</strong> each closure workday that isn't a holiday or additional paid day needs leave. By default it's covered with use-it-or-lose-it hours first, since they'd be lost on Dec 31 anyway, then with vacation.</li>
+    </ul>
+  </section>
+
+  <footer>Not an official tool. Check policies and dates with your HR team. Data stays in your browser; use <em>Export data</em> to save a copy.</footer>
+</div>
+
+<script id="engine">
+/* ------------------------------------------------------------------
+   Leave calculation engine — pure functions, no DOM.
+   ------------------------------------------------------------------ */
+const Engine = (function () {
+  const EPS = 1e-6;
+  const num = v => (Number.isFinite(+v) ? +v : 0);
+  const pos = v => Math.max(0, num(v));
+  const sum = a => a.reduce((s, x) => s + x, 0);
+  const pad = n => String(n).padStart(2, '0');
+
+  function parseISO(s) { const [y, m, d] = String(s).split('-').map(Number); return { y, m, d }; }
+  function utc(s) { const { y, m, d } = parseISO(s); return new Date(Date.UTC(y, m - 1, d)); }
+  function toISO(dt) { return dt.getUTCFullYear() + '-' + pad(dt.getUTCMonth() + 1) + '-' + pad(dt.getUTCDate()); }
+  const DEFAULT_WORKDAYS = [1, 2, 3, 4, 5];
+  function dow(iso) { return utc(iso).getUTCDay(); }
+  function isWorkday(iso, workdays) { return (workdays || DEFAULT_WORKDAYS).includes(dow(iso)); }
+  function isWeekend(iso, workdays) { return !isWorkday(iso, workdays); }
+
+  /* ---- Work schedule ---- */
+  const toMin = t => { const [h, m] = String(t || '0:0').split(':').map(Number); return (h || 0) * 60 + (m || 0); };
+  function paidHoursPerDay(s) { return Math.max(0, (toMin(s.end) - toMin(s.start) - pos(s.lunchMin)) / 60); }
+  // Time off taken at the end of the day ("leave early"). Returns minutes from midnight.
+  function timeOffRange(s, hours) {
+    const start = toMin(s.start), end = toMin(s.end), lunch = pos(s.lunchMin), lunchStart = toMin(s.lunchStart);
+    const paid = paidHoursPerDay(s);
+    if (hours >= paid - EPS) return { from: start, to: end, full: true };
+    const worked = (paid - hours) * 60;
+    let from = start + worked;
+    if (lunch > 0 && from > lunchStart + EPS) from += lunch;   // worked through lunch, so skip it
+    // Round the leave time down to the minute so time off is never short.
+    return { from: Math.floor(from + 1e-6), to: end, full: false };
+  }
+  const clean = x => Math.round(x * 1e6) / 1e6;
+  function roundUp(h, inc) { return clean(inc > 0 ? Math.ceil(h / inc - 1e-9) * inc : h); }
+
+  // Place `total` hours on available dates. Strategies:
+  //  full   – whole days, Fridays then Mondays first (long weekends), remainder as a partial day
+  //  weekly – one shorter day per week (Friday preferred)
+  //  daily  – a little time off on every available day
+  //  split  – the same amount on N days spread through the month (Friday preferred)
+  // `inc` is the rounding step in hours (0.01 = exact to the hundredth).
+  function placeHours(dates, total, s, strategy, inc, opts = {}) {
+    const paid = paidHoursPerDay(s);
+    const need = roundUp(Math.max(0, total), inc);
+    if (need <= EPS || !dates.length || paid <= 0) return { days: [], total: need, unplaced: need };
+    const out = [];
+    let left = need;
+    const take = (d, h) => { h = clean(Math.min(h, paid, left)); if (h > EPS) { out.push({ date: d, hours: h }); left = clean(left - h); } };
+    const fullDays = () => {
+      const pref = { 5: 0, 1: 1, 4: 2, 2: 3, 3: 4, 6: 5, 0: 6 };
+      const used = new Set(out.map(o => o.date));
+      [...dates].filter(d => !used.has(d)).sort((a, b) => pref[dow(a)] - pref[dow(b)] || a.localeCompare(b)).forEach(d => take(d, paid));
+    };
+    if (strategy === 'weekly') {
+      const weeks = {};
+      dates.forEach(d => { const k = toISO(new Date(utc(d).getTime() - ((dow(d) + 6) % 7) * 864e5)); (weeks[k] = weeks[k] || []).push(d); });
+      const picks = Object.keys(weeks).sort().map(k => weeks[k].find(d => dow(d) === 5) || weeks[k][weeks[k].length - 1]);
+      const per = roundUp(need / picks.length, inc);
+      picks.forEach(d => take(d, per));
+      if (left > EPS) fullDays();
+    } else if (strategy === 'split') {
+      const sorted = [...dates].sort();
+      const k = Math.max(1, Math.min(sorted.length, Math.round(opts.splitN || 3)));
+      const picks = [];
+      for (let j = 0; j < k; j++) {
+        const chunk = sorted.slice(Math.floor(j * sorted.length / k), Math.floor((j + 1) * sorted.length / k));
+        picks.push(chunk.find(d => dow(d) === 5) || chunk[chunk.length - 1]);
+      }
+      const per = roundUp(need / k, inc);
+      picks.forEach(d => take(d, per));
+      if (left > EPS) fullDays();
+    } else if (strategy === 'daily') {
+      const per = roundUp(need / dates.length, inc);
+      dates.forEach(d => take(d, per));
+      if (left > EPS) fullDays();
+    } else {
+      fullDays();
+    }
+    out.sort((a, b) => a.date.localeCompare(b.date));
+    return { days: out, total: need, unplaced: Math.max(0, left) };
+  }
+  function eachDay(start, end) {
+    const out = [];
+    if (!start) return out;
+    let d = utc(start);
+    const e = utc(end && end >= start ? end : start);
+    for (let guard = 0; d <= e && guard < 800; guard++) { out.push(toISO(d)); d = new Date(d.getTime() + 864e5); }
+    return out;
+  }
+
+  function monthlyAccrual(type, ctx) {
+    return type.unit === 'hour' ? pos(type.accrual) * pos(ctx.hoursPerWeek) * 52 / 12 : pos(type.accrual);
+  }
+
+  // Turn a logged entry into per-day records, skipping weekends and holidays.
+  function expandEntry(entry, holidayMap, workdays) {
+    const days = [], skipped = [];
+    eachDay(entry.start, entry.end).forEach(d => {
+      if (isWeekend(d, workdays)) skipped.push({ date: d, reason: 'weekend' });
+      else if (holidayMap[d]) skipped.push({ date: d, reason: holidayMap[d] });
+      else days.push({ typeId: entry.typeId, date: d, hours: pos(entry.hours), entryId: entry.id });
+    });
+    return { days, skipped };
+  }
+
+  // Winter closure: classify each workday, then cover leave days with hours.
+  function closurePlan(ctx, userDays) {
+    const c = ctx.closure, hpd = pos(ctx.hoursPerDay) || 8;
+    const covered = {};
+    userDays.forEach(r => { covered[r.date] = (covered[r.date] || 0) + r.hours; });
+    const days = eachDay(c.start, c.end).filter(d => isWorkday(d, ctx.workdays)).map(d => {
+      if (ctx.holidays[d]) return { date: d, kind: 'holiday', label: ctx.holidays[d], need: 0, assigned: [] };
+      const kind = c.days && c.days[d] === 'extra' ? 'extra' : 'leave';
+      const already = kind === 'leave' ? Math.min(hpd, covered[d] || 0) : 0;
+      return { date: d, kind, already, need: kind === 'leave' ? hpd - already : 0, assigned: [] };
+    });
+    const required = sum(days.map(d => d.need || 0));
+
+    // How much each type can contribute.
+    const order = [...ctx.types].sort((a, b) => rank(a) - rank(b));
+    function rank(t) { return t.rule === 'reset' ? 0 : t.rule === 'cap' ? 1 : 2; }
+    const alloc = {};
+    if (c.mode === 'custom' && c.custom) {
+      ctx.types.forEach(t => (alloc[t.id] = pos(c.custom[t.id])));
+    } else {
+      let left = required;
+      const firstLeave = days.find(d => d.need > 0);
+      const cm = firstLeave ? parseISO(firstLeave.date) : { y: ctx.year, m: 12 };
+      order.forEach(t => {
+        const monthEnds = cm.y === ctx.year ? cm.m - 1 : 12;
+        const other = sum(userDays.filter(r => r.typeId === t.id && r.date.slice(0, 4) === String(ctx.year)).map(r => r.hours));
+        const avail = Math.max(0, num(t.balance) + monthlyAccrual(t, ctx) * monthEnds - other);
+        const take = Math.min(left, avail);
+        alloc[t.id] = take;
+        left -= take;
+      });
+    }
+
+    // Assign hours to specific days, in priority order.
+    const queue = order.map(t => ({ typeId: t.id, left: alloc[t.id] || 0 })).filter(q => q.left > EPS);
+    const records = [];
+    days.forEach(d => {
+      let need = d.need || 0;
+      while (need > EPS && queue.length) {
+        const q = queue[0];
+        const h = Math.min(need, q.left);
+        d.assigned.push({ typeId: q.typeId, hours: h });
+        records.push({ typeId: q.typeId, date: d.date, hours: h, locked: true });
+        q.left -= h; need -= h;
+        if (q.left <= EPS) queue.shift();
+      }
+      d.unpaid = need > EPS ? need : 0;
+    });
+    const assignedTotal = sum(records.map(r => r.hours));
+    return { days, required, alloc, records, shortfall: Math.max(0, required - assignedTotal), unused: sum(queue.map(q => q.left)) };
+  }
+
+  function simulate(type, months, planned, policy, cur, A) {
+    const cap = pos(type.cap), rule = type.rule;
+    let bal = num(type.balance);
+    const rows = [];
+    let lost = 0, forfeit = 0, overdrawn = false, capMonth = null;
+    months.forEach((mo, i) => {
+      const start = bal, p = planned[i];
+      const e = policy && i >= cur ? Math.max(0, policy(i, bal, p)) : 0;
+      bal -= p + e;
+      const negative = bal < -EPS;
+      if (negative && i >= cur) overdrawn = true;
+      const resetsNow = rule === 'reset' && mo.m === 12;
+      let accrued = 0, lostHere = 0;
+      if (!resetsNow && A > 0) {
+        if (rule === 'cap') { const room = Math.max(0, cap - bal); accrued = Math.min(A, room); lostHere = A - accrued; }
+        else accrued = A;
+        bal += accrued;
+      }
+      if (rule === 'cap' && capMonth === null && i >= cur && bal >= cap - EPS) capMonth = mo;
+      const fy = resetsNow ? Math.max(0, bal) : 0;
+      rows.push({ ...mo, start, planned: p, extra: e, used: p + e, accrued, lost: lostHere, end: bal, forfeit: fy, negative, past: i < cur, current: i === cur });
+      if (i >= cur) { lost += lostHere; forfeit += fy; }
+    });
+    return { rows, lost, forfeit, atRisk: lost + forfeit, overdrawn, capMonth };
+  }
+
+  function solveLevel(ps, need) {
+    let lo = 0, hi = Math.max(0, ...ps) + need;
+    for (let k = 0; k < 60; k++) {
+      const mid = (lo + hi) / 2;
+      if (ps.reduce((a, p) => a + Math.max(0, mid - p), 0) < need) lo = mid; else hi = mid;
+    }
+    return hi;
+  }
+
+  function project(type, ctx, records) {
+    const Y = ctx.year;
+    const months = Array.from({ length: 12 }, (_, i) => ({ y: Y, m: i + 1, key: Y + '-' + pad(i + 1) }));
+    const a = parseISO(ctx.asOf);
+    const cur = a.y < Y ? 0 : a.y > Y ? 12 : a.m - 1;
+    const mine = records.filter(r => r.typeId === type.id && r.date.slice(0, 4) === String(Y));
+    const planned = months.map(mo => sum(mine.filter(r => r.date.slice(0, 7) === mo.key).map(r => r.hours)));
+    const locked = months.map(mo => sum(mine.filter(r => r.locked && r.date.slice(0, 7) === mo.key).map(r => r.hours)));
+    const A = monthlyAccrual(type, ctx), cap = pos(type.cap), n = 12;
+
+    let policy = null;
+    if (type.rule === 'reset') {
+      policy = (i, bal, p) => {
+        const rest = planned.slice(i);
+        const need = bal + A * (n - 1 - i) - sum(rest);
+        if (need <= EPS) return 0;
+        const L = solveLevel(rest, need);
+        return Math.min(Math.max(0, L - p), Math.max(0, bal - p));
+      };
+    } else if (type.rule === 'cap' && A > 0) {
+      policy = (i, bal, p) => Math.max(0, bal - p + A - cap);
+    }
+    const baseline = simulate(type, months, planned, null, cur, A);
+    const plan = policy ? simulate(type, months, planned, policy, cur, A) : baseline;
+
+    // Balance today = start of current month minus time off dated on/before today this month.
+    let today = null, lockedAhead = 0;
+    if (cur < 12) {
+      const row = plan.rows[cur];
+      const usedSoFar = sum(mine.filter(r => r.date.slice(0, 7) === row.key && r.date <= ctx.asOf).map(r => r.hours));
+      today = row.start - usedSoFar;
+      lockedAhead = sum(mine.filter(r => r.locked && r.date > ctx.asOf).map(r => r.hours));
+    }
+    return { months, planned, locked, baseline, plan, cur, accrualPerMonth: A, today, lockedAhead };
+  }
+
+  return { project, closurePlan, expandEntry, monthlyAccrual, eachDay, isWorkday, isWeekend, parseISO, dow,
+           paidHoursPerDay, timeOffRange, placeHours, roundUp, toMin };
+})();
+</script>
+
+<script>
+/* ------------------------------------------------------------------
+   UI
+   ------------------------------------------------------------------ */
+const COLORS = ['#2f6fdf', '#1f9d74', '#d9822b', '#8e5bd6', '#d04f7a', '#3a9fbf'];
+const RULES = { reset: 'Use it or lose it (resets Dec 31)', cap: 'Maximum balance cap', none: 'No limit (rolls over)' };
+const UNITS = { month: 'hrs per month', hour: 'hrs per hour paid' };
+
+const $ = (s, el = document) => el.querySelector(s);
+const uid = () => Math.random().toString(36).slice(2, 9);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmt = (h, d = 1) => { const f = 10 ** d, r = Math.round(h * f) / f; return (Object.is(r, -0) ? 0 : r).toLocaleString('en-US', { maximumFractionDigits: d }); };
+const days = h => fmt(h / (state.hoursPerDay || 8));
+const monthName = (mo, style = 'short') => new Date(mo.y, mo.m - 1, 1).toLocaleString('en-US', { month: style, year: 'numeric' });
+const prettyDate = (iso, withDay) => { const { y, m, d } = Engine.parseISO(iso); return new Date(y, m - 1, d).toLocaleDateString('en-US', { ...(withDay ? { weekday: 'short' } : {}), month: 'short', day: 'numeric', year: 'numeric' }); };
+const holidayMap = () => Object.fromEntries(state.holidays.map(h => [h.date, h.name]));
+const typeById = id => state.types.find(t => t.id === id);
+
+const DEFAULT_SCHEDULE = { start: '08:30', end: '17:00', lunchMin: 30, lunchStart: '12:00', days: [1, 2, 3, 4, 5] };
+
+function todayISO() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+
+/* ---------- 2026 defaults ----------
+   Holiday dates follow the standard staff holiday pattern (Saturday holidays
+   observed Friday). Verify against the official university holiday schedule. */
+function defaults2026() {
+  const t = todayISO();
+  return {
+    version: 2,
+    year: 2026,
+    asOf: t.startsWith('2026') ? t : '2026-01-01',
+    schedule: { ...DEFAULT_SCHEDULE, days: [...DEFAULT_SCHEDULE.days] },
+    hoursPerDay: 8,
+    hoursPerWeek: 40,
+    types: [
+      { id: 'pto', name: 'PTO', balance: 24, accrual: 0, unit: 'month', rule: 'reset', cap: 0, color: COLORS[0] },
+      { id: 'fh', name: 'Floating Holiday', balance: 16, accrual: 0, unit: 'month', rule: 'reset', cap: 0, color: COLORS[2] },
+      { id: 'vac', name: 'Vacation', balance: 80, accrual: 0.07693, unit: 'hour', rule: 'cap', cap: 240, color: COLORS[1] }
+    ],
+    holidays: [
+      { date: '2026-01-01', name: "New Year's Day" },
+      { date: '2026-01-19', name: 'Martin Luther King Jr. Day' },
+      { date: '2026-02-16', name: "Presidents' Day" },
+      { date: '2026-05-25', name: 'Memorial Day' },
+      { date: '2026-06-19', name: 'Juneteenth' },
+      { date: '2026-07-03', name: 'Independence Day (observed)' },
+      { date: '2026-09-07', name: 'Labor Day' },
+      { date: '2026-11-26', name: 'Thanksgiving Day' },
+      { date: '2026-11-27', name: 'Day after Thanksgiving' },
+      { date: '2026-12-25', name: 'Christmas Day' },
+      { date: '2027-01-01', name: "New Year's Day" }
+    ],
+    closure: {
+      start: '2026-12-21', end: '2027-01-01',
+      // Additional paid closure days (3). Dec 23 is confirmed; Dec 24 and 31 are placeholders to verify.
+      days: { '2026-12-23': 'extra', '2026-12-24': 'extra', '2026-12-31': 'extra' },
+      mode: 'auto', custom: null
+    },
+    entries: [
+      { id: uid(), typeId: 'vac', start: '2026-11-23', end: '2026-11-27', hours: 8, note: 'Example: Thanksgiving week' }
+    ]
+  };
+}
+
+let state = defaults2026();
+syncHours();
+
+// Paid hours per day/week come from the work schedule.
+function syncHours() {
+  const s = state.schedule;
+  state.hoursPerDay = Engine.paidHoursPerDay(s) || 8;
+  state.hoursPerWeek = state.hoursPerDay * (s.days.length || 5);
+}
+const fmtTime = m => { const h = Math.floor(m / 60) % 24, mm = m % 60; return `${((h + 11) % 12) + 1}:${String(mm).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`; };
+
+/* ---------- Computation ---------- */
+function compute() {
+  const hol = holidayMap();
+  const workdays = state.schedule.days;
+  const expanded = state.entries.map(e => ({ e, ...Engine.expandEntry(e, hol, workdays) }));
+  const userDays = expanded.flatMap(x => x.days);
+  const ctx = { year: state.year, asOf: state.asOf, hoursPerDay: state.hoursPerDay, hoursPerWeek: state.hoursPerWeek, workdays, holidays: hol, closure: state.closure, types: state.types };
+  const closure = Engine.closurePlan(ctx, userDays);
+  const records = userDays.concat(closure.records);
+  const projs = state.types.map(t => ({ t, r: Engine.project(t, ctx, records) }));
+  return { ctx, expanded, closure, records, projs };
+}
+
+/* ---------- Settings ---------- */
+const DAY_LABELS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+function renderSettings() {
+  const s = state.schedule;
+  $('#yearTitle').textContent = state.year;
+  $('#asOf').value = state.asOf;
+  $('#sStart').value = s.start;
+  $('#sEnd').value = s.end;
+  $('#sLunch').value = s.lunchMin;
+  $('#sLunchStart').value = s.lunchStart;
+  $('#sDays').innerHTML = [1, 2, 3, 4, 5, 6, 0].map(d =>
+    `<label title="${DAY_LABELS[d]}"><input type="checkbox" value="${d}" ${s.days.includes(d) ? 'checked' : ''} aria-label="${DAY_LABELS[d]}">${DAY_LABELS[d]}</label>`).join('');
+  renderDerived();
+  $('#cStart').value = state.closure.start;
+  $('#cEnd').value = state.closure.end;
+  $('#cMode').value = state.closure.mode;
+}
+function renderDerived() {
+  const s = state.schedule;
+  $('#sDerived').innerHTML = `= <strong>${fmt(state.hoursPerDay, 2)}</strong> paid hrs/day · <strong>${fmt(state.hoursPerWeek, 2)}</strong> hrs/week<br>${fmtTime(Engine.toMin(s.start))} – ${fmtTime(Engine.toMin(s.end))}${s.lunchMin > 0 ? `, ${s.lunchMin}-min lunch at ${fmtTime(Engine.toMin(s.lunchStart))}` : ''}`;
+}
+function onScheduleChange() {
+  const s = state.schedule;
+  const st = $('#sStart').value, en = $('#sEnd').value;
+  if (st && en && Engine.toMin(en) > Engine.toMin(st)) { s.start = st; s.end = en; }
+  s.lunchMin = Math.max(0, +$('#sLunch').value || 0);
+  if ($('#sLunchStart').value) s.lunchStart = $('#sLunchStart').value;
+  const days = [...document.querySelectorAll('#sDays input:checked')].map(i => +i.value);
+  if (days.length) s.days = days;
+  syncHours();
+  renderDerived();
+  renderTypesPerMonth();
+  $('#pHours').value = state.hoursPerDay;
+  renderResults();
+}
+['#sStart', '#sEnd', '#sLunch', '#sLunchStart'].forEach(id => $(id).addEventListener('change', onScheduleChange));
+$('#sDays').addEventListener('change', onScheduleChange);
+$('#asOf').addEventListener('change', e => { if (e.target.value) { state.asOf = e.target.value; renderResults(); } });
+$('#cStart').addEventListener('change', e => { if (e.target.value) { state.closure.start = e.target.value; renderResults(); } });
+$('#cEnd').addEventListener('change', e => { if (e.target.value) { state.closure.end = e.target.value; renderResults(); } });
+$('#cMode').addEventListener('change', e => {
+  // Seed custom amounts with the current auto split the first time.
+  if (e.target.value === 'custom' && !state.closure.custom) {
+    state.closure.mode = 'auto';
+    state.closure.custom = { ...compute().closure.alloc };
+  }
+  state.closure.mode = e.target.value;
+  renderResults();
+});
+
+/* ---------- Leave types ---------- */
+function renderTypes() {
+  const body = $('#typesBody');
+  if (!state.types.length) { body.innerHTML = '<tr><td colspan="8" class="empty">No leave types yet.</td></tr>'; return; }
+  body.innerHTML = state.types.map(t => `
+    <tr data-id="${t.id}">
+      <td><span class="dot" style="--c:${t.color}"></span><input data-f="name" type="text" value="${esc(t.name)}" aria-label="Leave type name" style="width:150px"></td>
+      <td class="n"><input data-f="balance" type="number" step="0.5" value="${t.balance}" aria-label="Jan 1 balance"></td>
+      <td class="n"><input data-f="accrual" type="number" min="0" step="0.00001" value="${t.accrual}" aria-label="Accrual amount"></td>
+      <td><select data-f="unit" aria-label="Accrual unit">${Object.entries(UNITS).map(([k, v]) => `<option value="${k}" ${t.unit === k ? 'selected' : ''}>${v}</option>`).join('')}</select></td>
+      <td class="n" data-pm="${t.id}"></td>
+      <td><select data-f="rule" aria-label="Rule">${Object.entries(RULES).map(([k, v]) => `<option value="${k}" ${t.rule === k ? 'selected' : ''}>${v}</option>`).join('')}</select></td>
+      <td class="n"><input data-f="cap" type="number" min="0" step="1" value="${t.cap || ''}" ${t.rule === 'cap' ? '' : 'disabled'} aria-label="Cap"></td>
+      <td><button class="link" data-del="${t.id}" type="button">Remove</button></td>
+    </tr>`).join('');
+  renderTypesPerMonth();
+}
+function renderTypesPerMonth() {
+  state.types.forEach(t => {
+    const cell = document.querySelector(`[data-pm="${t.id}"]`);
+    if (cell) cell.textContent = fmt(Engine.monthlyAccrual(t, state), 2) + ' hrs';
+  });
+}
+$('#typesBody').addEventListener('input', onTypeEdit);
+$('#typesBody').addEventListener('change', onTypeEdit);
+function onTypeEdit(e) {
+  const f = e.target.dataset.f;
+  if (!f) return;
+  const t = typeById(e.target.closest('tr').dataset.id);
+  if (!t) return;
+  t[f] = ['name', 'rule', 'unit'].includes(f) ? e.target.value : +e.target.value;
+  if (f === 'rule') {
+    const capInput = e.target.closest('tr').querySelector('[data-f=cap]');
+    capInput.disabled = t.rule !== 'cap';
+    if (t.rule === 'cap' && !t.cap) { t.cap = 240; capInput.value = 240; }
+  }
+  if (f === 'name') renderPlanForm();
+  renderTypesPerMonth();
+  renderResults();
+}
+$('#typesBody').addEventListener('click', e => {
+  const id = e.target.dataset.del;
+  if (!id) return;
+  state.types = state.types.filter(t => t.id !== id);
+  state.entries = state.entries.filter(p => p.typeId !== id);
+  renderAll();
+});
+$('#addType').addEventListener('click', () => {
+  state.types.push({ id: uid(), name: 'New leave type', balance: 0, accrual: 0, unit: 'month', rule: 'reset', cap: 0, color: COLORS[state.types.length % COLORS.length] });
+  renderAll();
+});
+
+/* ---------- Time off log ---------- */
+function renderPlanForm() {
+  const sel = $('#pType'), prev = sel.value;
+  sel.innerHTML = state.types.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('');
+  if (state.types.some(t => t.id === prev)) sel.value = prev;
+  if (!$('#pStart').value) $('#pStart').value = state.asOf;
+  if (!$('#pHours').value) $('#pHours').value = state.hoursPerDay;
+}
+$('#planForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const typeId = $('#pType').value, start = $('#pStart').value, end = $('#pEnd').value || start, hours = +$('#pHours').value;
+  if (!typeId || !start || !(hours > 0)) return;
+  state.entries.push({ id: uid(), typeId, start, end: end < start ? start : end, hours, note: $('#pNote').value.trim() });
+  $('#pNote').value = ''; $('#pEnd').value = '';
+  renderResults();
+});
+$('#plannedWrap').addEventListener('click', e => {
+  const id = e.target.dataset.pdel;
+  if (!id) return;
+  state.entries = state.entries.filter(p => p.id !== id);
+  renderResults();
+});
+
+function renderLog(c) {
+  const wrap = $('#plannedWrap');
+  const rows = [];
+  [...c.expanded].sort((a, b) => a.e.start.localeCompare(b.e.start)).forEach(({ e, days: ds, skipped }) => {
+    const t = typeById(e.typeId);
+    const total = ds.reduce((s, d) => s + d.hours, 0);
+    const inYear = ds.some(d => d.date.startsWith(String(state.year)));
+    let status;
+    if (!ds.length) status = ['muted', 'No workdays'];
+    else if (!inYear) status = ['muted', 'Not in ' + state.year];
+    else if (ds.every(d => d.date <= state.asOf)) status = ['muted', 'Taken'];
+    else if (ds.every(d => d.date > state.asOf)) status = ['good', 'Planned'];
+    else status = ['warn', 'In progress'];
+    const hol = skipped.filter(s => s.reason !== 'weekend');
+    const range = e.end && e.end !== e.start ? `${prettyDate(e.start)} – ${prettyDate(e.end)}` : prettyDate(e.start);
+    rows.push(`<tr class="${status[1] === 'Taken' ? 'past' : ''}">
+      <td>${range}</td>
+      <td>${t ? `<span class="dot" style="--c:${t.color}"></span>${esc(t.name)}` : '—'}</td>
+      <td class="n">${ds.length}</td>
+      <td class="n">${fmt(total)}</td>
+      <td class="wrapcell">${esc(e.note || '')}${hol.length ? `<div class="hint" style="margin:0">Skips ${hol.map(h => esc(h.reason)).join(', ')}</div>` : ''}</td>
+      <td><span class="pill ${status[0]}">${status[1]}</span></td>
+      <td><button class="link" data-pdel="${e.id}" type="button" aria-label="Remove entry">Remove</button></td>
+    </tr>`);
+  });
+  // Locked closure hours, grouped by type
+  const byType = {};
+  c.closure.records.forEach(r => { byType[r.typeId] = byType[r.typeId] || { hrs: 0, dates: [] }; byType[r.typeId].hrs += r.hours; byType[r.typeId].dates.push(r.date); });
+  Object.entries(byType).forEach(([id, v]) => {
+    const t = typeById(id);
+    const ds = [...new Set(v.dates)].sort();
+    rows.push(`<tr>
+      <td>${prettyDate(ds[0])}${ds.length > 1 ? ' – ' + prettyDate(ds[ds.length - 1]) : ''}</td>
+      <td>${t ? `<span class="dot" style="--c:${t.color}"></span>${esc(t.name)}` : '—'}</td>
+      <td class="n">${ds.length}</td>
+      <td class="n">${fmt(v.hrs)}</td>
+      <td class="wrapcell">Winter closure</td>
+      <td><span class="pill lock">Locked</span></td>
+      <td></td>
+    </tr>`);
+  });
+  wrap.innerHTML = rows.length
+    ? `<table><thead><tr><th>Dates</th><th>Leave type</th><th class="n">Workdays</th><th class="n">Hours</th><th>Note</th><th>Status</th><th></th></tr></thead><tbody>${rows.join('')}</tbody></table>`
+    : '<p class="empty">No time off logged yet.</p>';
+}
+
+/* ---------- Winter closure ---------- */
+function renderClosure(c) {
+  const cl = c.closure;
+  // custom allocation inputs
+  const customEl = $('#cCustom');
+  if (state.closure.mode === 'custom') {
+    customEl.innerHTML = `<div class="row">${state.types.map(t => `<label class="field"><span><span class="dot" style="--c:${t.color}"></span>${esc(t.name)} hrs</span><input type="number" min="0" step="0.5" data-cust="${t.id}" value="${fmt((state.closure.custom || {})[t.id] || 0)}"></label>`).join('')}</div>`;
+  } else customEl.innerHTML = '';
+
+  const rows = cl.days.map(d => {
+    let status;
+    if (d.kind === 'holiday') status = `<span class="pill good">Holiday</span> ${esc(d.label)}`;
+    else status = `<select data-cday="${d.date}" aria-label="Closure day status">
+        <option value="leave" ${d.kind === 'leave' ? 'selected' : ''}>Leave required</option>
+        <option value="extra" ${d.kind === 'extra' ? 'selected' : ''}>Additional paid day off</option>
+      </select>`;
+    let cover = '';
+    if (d.kind === 'leave') {
+      const parts = [];
+      if (d.already > 0) parts.push(`${fmt(d.already)} hrs from your log`);
+      d.assigned.forEach(a => { const t = typeById(a.typeId); parts.push(`<span class="dot" style="--c:${t ? t.color : '#999'}"></span>${fmt(a.hours)} hrs ${esc(t ? t.name : '')}`); });
+      if (d.unpaid > 0) parts.push(`<span class="pill bad">${fmt(d.unpaid)} hrs not covered</span>`);
+      cover = parts.join(' &nbsp;·&nbsp; ');
+    } else cover = '<span class="hint" style="margin:0">No leave needed</span>';
+    return `<tr><td>${prettyDate(d.date, true)}</td><td>${status}</td><td class="wrapcell">${cover}</td></tr>`;
+  }).join('');
+  $('#closureWrap').innerHTML = cl.days.length
+    ? `<table><thead><tr><th>Date</th><th>Status</th><th>Covered by</th></tr></thead><tbody>${rows}</tbody></table>`
+    : '<p class="empty">Set closure dates to see the workdays.</p>';
+
+  const nLeave = cl.days.filter(d => d.kind === 'leave').length;
+  const nExtra = cl.days.filter(d => d.kind === 'extra').length;
+  const nHol = cl.days.filter(d => d.kind === 'holiday').length;
+  const lockedHrs = cl.records.reduce((s, r) => s + r.hours, 0);
+  $('#closureStats').innerHTML = `
+    <span><strong>${cl.days.length}</strong> workdays</span>
+    <span><strong>${nHol}</strong> holidays</span>
+    <span><strong>${nExtra}</strong> additional paid</span>
+    <span><strong>${nLeave}</strong> need leave (${fmt(cl.required)} hrs)</span>
+    <span><span class="pill lock">${fmt(lockedHrs)} hrs locked</span></span>
+    ${cl.shortfall > 0.05 ? `<span><span class="pill bad">${fmt(cl.shortfall)} hrs short</span></span>` : '<span><span class="pill good">Fully covered</span></span>'}
+    ${state.closure.mode === 'custom' && cl.unused > 0.05 ? `<span><span class="pill warn">${fmt(cl.unused)} custom hrs more than needed</span></span>` : ''}`;
+}
+$('#closureWrap').addEventListener('change', e => {
+  const d = e.target.dataset.cday;
+  if (!d) return;
+  state.closure.days = state.closure.days || {};
+  state.closure.days[d] = e.target.value;
+  renderResults();
+});
+$('#cCustom').addEventListener('change', e => {
+  const id = e.target.dataset.cust;
+  if (!id) return;
+  state.closure.custom = state.closure.custom || {};
+  state.closure.custom[id] = Math.max(0, +e.target.value || 0);
+  renderResults();
+});
+
+/* ---------- Vacation cap planner ---------- */
+const capUI = { month: null, strategy: 'full', inc: 0.25, splitN: 3 };
+const STRATEGIES = {
+  full: 'Full day + one extra day',
+  split: 'Split evenly over set days',
+  weekly: 'One shorter day each week',
+  daily: 'A little every day (leave early)'
+};
+const ROUNDING = [[0.01, 'Exact (0.01 hr)'], [0.25, '15 min'], [0.5, '30 min'], [1, '1 hour']];
+const pad2 = n => String(n).padStart(2, '0');
+// 5.34 -> "5h 21m" (rounded up to the minute so it's never short)
+const hm = h => { const m = Math.ceil(h * 60 - 1e-6); return `${Math.floor(m / 60)}h${m % 60 ? ' ' + (m % 60) + 'm' : ''}`; };
+const capOpts = () => ({ splitN: capUI.splitN });
+
+function monthDays(c, key) {
+  const { y, m } = Engine.parseISO(key + '-01');
+  const last = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const hol = c.ctx.holidays, wd = state.schedule.days;
+  const closureDates = new Set(c.closure.days.map(d => d.date));
+  const logged = new Set(c.records.map(r => r.date));
+  return Engine.eachDay(key + '-01', key + '-' + pad2(last)).filter(d => Engine.isWorkday(d, wd)).map(d => {
+    let na = null;
+    if (hol[d]) na = 'Holiday';
+    else if (closureDates.has(d)) na = 'Closure';
+    else if (logged.has(d)) na = 'Time off logged';
+    else if (d <= state.asOf) na = 'Past';
+    return { date: d, na };
+  });
+}
+
+function renderCapPlanner(c) {
+  const host = $('#capPlanner');
+  const caps = c.projs.filter(p => p.t.rule === 'cap' && p.r.accrualPerMonth > 0 && p.r.cur < 12);
+  if (!caps.length) { host.innerHTML = ''; return; }
+  host.innerHTML = caps.map(({ t, r }) => {
+    const needMonths = r.plan.rows.filter(x => !x.past && x.extra > 0.01);
+    let preview = false, key, exact;
+    if (needMonths.length) {
+      const pick = needMonths.find(x => x.key === capUI.month) || needMonths[0];
+      key = pick.key; exact = pick.extra;
+    } else {
+      // Not at the cap this year: preview what an at-cap month looks like.
+      preview = true;
+      const cur = r.months[r.cur].key;
+      const nextIdx = Math.min(11, r.cur + 1);
+      key = monthDays(c, cur).some(d => !d.na) ? cur : r.months[nextIdx].key;
+      exact = r.accrualPerMonth;
+    }
+    const mo = Engine.parseISO(key + '-01');
+    const all = monthDays(c, key);
+    const avail = all.filter(d => !d.na).map(d => d.date);
+    const placed = Engine.placeHours(avail, exact, state.schedule, capUI.strategy, capUI.inc, capOpts());
+    const byDate = Object.fromEntries(placed.days.map(d => [d.date, d.hours]));
+
+    // Calendar grid: one column per workday, Monday first.
+    const cols = [...state.schedule.days].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7));
+    const weeks = {};
+    all.forEach(d => {
+      const t0 = Engine.parseISO(d.date), g = Engine.dow(d.date);
+      const mon = new Date(Date.UTC(t0.y, t0.m - 1, t0.d - ((g + 6) % 7)));
+      (weeks[mon.toISOString().slice(0, 10)] = weeks[mon.toISOString().slice(0, 10)] || {})[g] = d;
+    });
+    let grid = cols.map(g => `<div class="hd">${DAY_LABELS[g]}</div>`).join('');
+    Object.keys(weeks).sort().forEach(wk => {
+      cols.forEach(g => {
+        const d = weeks[wk][g];
+        if (!d) { grid += '<div class="cell blank"></div>'; return; }
+        const dayNum = Engine.parseISO(d.date).d;
+        const h = byDate[d.date];
+        if (h) {
+          const rg = Engine.timeOffRange(state.schedule, h);
+          grid += `<div class="cell off"><div class="d">${dayNum}</div><div class="h">${fmt(h, 2)} hrs</div><div class="tm">${rg.full ? 'Full day' : `Off ${fmtTime(rg.from)}–${fmtTime(rg.to)}`}</div></div>`;
+        } else if (d.na) {
+          grid += `<div class="cell na"><div class="d">${dayNum}</div><div class="tm">${d.na}</div></div>`;
+        } else {
+          grid += `<div class="cell"><div class="d">${dayNum}</div></div>`;
+        }
+      });
+    });
+
+    const list = placed.days.map(d => {
+      const rg = Engine.timeOffRange(state.schedule, d.hours);
+      return `<tr><td>${prettyDate(d.date, true)}</td><td class="n">${fmt(d.hours, 2)}</td><td class="n">${hm(d.hours)}</td><td>${rg.full ? `Full day (${fmtTime(rg.from)} – ${fmtTime(rg.to)})` : `Leave at ${fmtTime(rg.from)} (off until ${fmtTime(rg.to)})`}</td></tr>`;
+    }).join('');
+
+    const monthOpts = needMonths.length
+      ? needMonths.map(x => `<option value="${x.key}" ${x.key === key ? 'selected' : ''}>${monthName(x, 'long')} · ${fmt(x.extra, 2)} hrs</option>`).join('')
+      : `<option>${monthName({ y: mo.y, m: mo.m }, 'long')} (preview)</option>`;
+    const status = preview
+      ? `<span class="pill good">Under the cap this year</span>`
+      : `<span class="pill bad">At the ${fmt(t.cap)}-hr cap${r.baseline.capMonth ? ' from ' + monthName(r.baseline.capMonth) : ''}</span>`;
+
+    return `<section class="card" style="--c:${t.color}">
+      <div class="proj-head"><h2><span class="dot" style="--c:${t.color}"></span>${esc(t.name)} cap planner</h2>${status}</div>
+      <p class="hint">${preview
+        ? `Your ${esc(t.name.toLowerCase())} stays under ${fmt(t.cap)} hrs through December, so nothing is required yet. This preview shows what a month at the cap would need: about one month's accrual (${fmt(r.accrualPerMonth, 2)} hrs).`
+        : `Once your balance reaches the cap, new hours stop accruing. This is the minimum to use each month, placed on your open workdays (no holidays, closure days or days already off), so you don't lose any accrual.`}</p>
+      <div class="row">
+        <label class="field">Month <select data-cap-month ${preview ? 'disabled' : ''}>${monthOpts}</select></label>
+        <label class="field">Plan style <select data-cap-strategy>${Object.entries(STRATEGIES).map(([k, v]) => `<option value="${k}" ${capUI.strategy === k ? 'selected' : ''}>${v}</option>`).join('')}</select></label>
+        ${capUI.strategy === 'split' ? `<label class="field">Number of days <input data-cap-n type="number" min="1" max="23" step="1" value="${capUI.splitN}" style="width:80px"></label>` : ''}
+        <label class="field">Round up to <select data-cap-inc>${ROUNDING.map(([v, l]) => `<option value="${v}" ${capUI.inc === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+      </div>
+      <div class="cap-sum">
+        <div><span class="big">${fmt(placed.total, 2)} hrs</span> <span class="lbl">(${hm(placed.total)}) minimum in ${monthName({ y: mo.y, m: mo.m }, 'long')}${capUI.inc > 0.01 ? ` · ${fmt(exact, 2)} before rounding` : ` · calculated ${fmt(exact, 4)}`}</span></div>
+        <div><strong>${placed.days.length}</strong> <span class="lbl">day${placed.days.length === 1 ? '' : 's'} with time off · ${avail.length} open workdays</span></div>
+        ${placed.unplaced > 0.01 ? `<div><span class="pill warn">${fmt(placed.unplaced, 2)} hrs don't fit in this month's open days</span></div>` : ''}
+      </div>
+      <div class="cal" style="--cols:${cols.length}" role="grid" aria-label="Suggested time off in ${monthName({ y: mo.y, m: mo.m }, 'long')}">${grid}</div>
+      ${list ? `<div class="table-wrap"><table><thead><tr><th>Day</th><th class="n">Hours</th><th class="n">h:mm</th><th>Time off (schedule ${fmtTime(Engine.toMin(state.schedule.start))} – ${fmtTime(Engine.toMin(state.schedule.end))})</th></tr></thead><tbody>${list}</tbody></table></div>` : ''}
+      ${!preview && placed.days.length ? `<button class="primary add-row" type="button" data-cap-add="${t.id}" data-cap-key="${key}">Add these ${placed.days.length} day${placed.days.length === 1 ? '' : 's'} to my time off log</button>` : ''}
+    </section>`;
+  }).join('');
+}
+$('#capPlanner').addEventListener('change', e => {
+  if (e.target.matches('[data-cap-month]')) capUI.month = e.target.value;
+  else if (e.target.matches('[data-cap-strategy]')) capUI.strategy = e.target.value;
+  else if (e.target.matches('[data-cap-inc]')) capUI.inc = +e.target.value;
+  else if (e.target.matches('[data-cap-n]')) capUI.splitN = Math.max(1, Math.min(23, Math.round(+e.target.value) || 3));
+  else return;
+  renderResults();
+});
+$('#capPlanner').addEventListener('click', e => {
+  const btn = e.target.closest('[data-cap-add]');
+  if (!btn) return;
+  const c = compute();
+  const p = c.projs.find(x => x.t.id === btn.dataset.capAdd);
+  const row = p && p.r.plan.rows.find(x => x.key === btn.dataset.capKey);
+  if (!row) return;
+  const avail = monthDays(c, row.key).filter(d => !d.na).map(d => d.date);
+  const placed = Engine.placeHours(avail, row.extra, state.schedule, capUI.strategy, capUI.inc, capOpts());
+  placed.days.forEach(d => state.entries.push({ id: uid(), typeId: p.t.id, start: d.date, end: d.date, hours: d.hours, note: 'Cap planner minimum' }));
+  capUI.month = null;
+  renderResults();
+});
+
+/* ---------- Holidays ---------- */
+function renderHolidays() {
+  $('#holCount').textContent = state.holidays.length;
+  const list = [...state.holidays].sort((a, b) => a.date.localeCompare(b.date));
+  $('#holWrap').innerHTML = `<table><thead><tr><th>Date</th><th>Holiday</th><th></th></tr></thead><tbody>${list.map(h =>
+    `<tr><td>${prettyDate(h.date, true)}</td><td>${esc(h.name)}</td><td><button class="link" data-hdel="${h.date}" type="button">Remove</button></td></tr>`).join('')}</tbody></table>`;
+}
+$('#holForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const date = $('#hDate').value, name = $('#hName').value.trim();
+  if (!date || !name) return;
+  state.holidays = state.holidays.filter(h => h.date !== date).concat({ date, name });
+  $('#hName').value = '';
+  renderResults();
+});
+$('#holWrap').addEventListener('click', e => {
+  const d = e.target.dataset.hdel;
+  if (!d) return;
+  state.holidays = state.holidays.filter(h => h.date !== d);
+  renderResults();
+});
+
+/* ---------- Results ---------- */
+function renderResults() {
+  const c = compute();
+  renderBanner(c);
+  renderSummary(c);
+  renderCapPlanner(c);
+  renderClosure(c);
+  renderLog(c);
+  renderHolidays();
+  renderProjections(c);
+}
+
+function renderBanner(c) {
+  const el = $('#banner');
+  if (!c.projs.length) { el.className = 'banner'; el.innerHTML = 'Add a leave type to get started.'; return; }
+  const cur = c.projs[0].r.cur;
+  if (cur >= 12) { el.className = 'banner'; el.innerHTML = `${state.year} is over. Change the "as of" date to plan within the year.`; return; }
+  const mo = c.projs[0].r.months[cur];
+  const managed = c.projs.filter(p => p.t.rule !== 'none');
+  const total = managed.reduce((s, p) => s + p.r.plan.rows[cur].used, 0);
+  const extra = managed.reduce((s, p) => s + p.r.plan.rows[cur].extra, 0);
+  const atRisk = c.projs.reduce((s, p) => s + p.r.baseline.atRisk, 0);
+  const locked = c.closure.records.filter(r => r.date > state.asOf).reduce((s, r) => s + r.hours, 0);
+  const closureLine = c.closure.shortfall > 0.05
+    ? `<div><span class="pill bad">Winter closure</span> You're <strong>${fmt(c.closure.shortfall)} hrs short</strong> of covering the closure. Save more vacation or plan for unpaid time.</div>`
+    : locked > 0 ? `<div><span class="pill lock">Winter closure</span> ${fmt(locked)} hrs (${days(locked)} days) are locked for the closure and left out of the suggestions.</div>` : '';
+  if (atRisk > 0.05) {
+    el.className = 'banner warn';
+    el.innerHTML = `<div class="hint" style="margin:0">${monthName(mo, 'long')}</div>
+      <div>Take about <span class="big">${fmt(total)} hours</span> (≈ ${days(total)} days) off this month (${fmt(total - extra)} logged + ${fmt(extra)} suggested).</div>
+      <div>If you only take the time already logged and locked, you'll lose <strong>${fmt(atRisk)} hours</strong> by Dec 31.</div>${closureLine}`;
+  } else {
+    el.className = 'banner good';
+    el.innerHTML = `<div class="hint" style="margin:0">${monthName(mo, 'long')}</div>
+      <div><span class="big">You're on track.</span> No hours will be lost this year with your current plan.</div>${closureLine}`;
+  }
+}
+
+function renderSummary(c) {
+  $('#summary').innerHTML = c.projs.map(({ t, r }) => {
+    if (r.cur >= 12) return '';
+    const row = r.plan.rows[r.cur];
+    const items = [];
+    items.push(`<li>Balance today: <strong>${fmt(r.today)} hrs</strong> (${days(r.today)} days)</li>`);
+    if (r.lockedAhead > 0) items.push(`<li><span class="pill lock">Locked</span> ${fmt(r.lockedAhead)} hrs for winter closure</li>`);
+    if (t.rule !== 'none') {
+      items.push(`<li>This month: ${fmt(row.planned)} logged + <strong>${fmt(row.extra)} suggested</strong></li>`);
+      const rest = r.plan.rows.slice(r.cur).reduce((s, x) => s + x.extra, 0);
+      items.push(`<li>Suggested through Dec: ${fmt(rest)} hrs</li>`);
+      if (r.baseline.atRisk > 0.05) items.push(`<li><span class="pill bad">At risk</span> ${fmt(r.baseline.atRisk)} hrs lost by Dec 31 without the suggestions</li>`);
+      else items.push(`<li><span class="pill good">Safe</span> Nothing lost this year</li>`);
+    }
+    if (t.rule === 'cap') {
+      if (r.baseline.capMonth) items.push(`<li>Reaches the ${fmt(t.cap)}-hr cap in <strong>${monthName(r.baseline.capMonth)}</strong></li>`);
+      else items.push(`<li>Stays under the ${fmt(t.cap)}-hr cap this year</li>`);
+    }
+    if (r.accrualPerMonth > 0) items.push(`<li>Accrues ${fmt(r.accrualPerMonth, 2)} hrs/month</li>`);
+    if (r.plan.overdrawn) items.push(`<li><span class="pill warn">Check</span> Logged time goes over your balance</li>`);
+    const big = t.rule === 'none' ? row.planned : row.used;
+    return `<div class="sum" style="--c:${t.color}">
+      <h3>${esc(t.name)}<span class="badge">${t.rule === 'reset' ? 'Resets Dec 31' : t.rule === 'cap' ? fmt(t.cap) + '-hr cap' : 'Rolls over'}</span></h3>
+      <div class="num">${fmt(big)} <span class="unit">hrs</span></div>
+      <div class="lbl">to use in ${monthName(row, 'long')} (≈ ${days(big)} days)</div>
+      <ul>${items.join('')}</ul>
+    </div>`;
+  }).join('');
+}
+
+function chartSVG(t, r) {
+  const rows = r.plan.rows, base = r.baseline.rows;
+  const W = 640, H = 170, padL = 36, padB = 22, padT = 10;
+  const maxV = Math.max(1, t.rule === 'cap' ? t.cap : 0, ...base.map(x => x.start), ...rows.map(x => x.start), ...base.map(x => x.end)) * 1.08;
+  const n = rows.length, slot = (W - padL) / n, bw = Math.min(34, slot * 0.6);
+  const yv = v => padT + (H - padT - padB) * (1 - Math.max(0, v) / maxV);
+  let g = '';
+  [0, 0.5, 1].forEach(f => { const v = maxV / 1.08 * f, y = yv(v);
+    g += `<line x1="${padL}" x2="${W}" y1="${y}" y2="${y}" stroke="var(--border)" /><text x="${padL - 6}" y="${y + 4}" text-anchor="end">${Math.round(v)}</text>`; });
+  rows.forEach((row, i) => {
+    const x = padL + slot * i + (slot - bw) / 2, bEnd = base[i].end, pEnd = row.end, op = row.past ? 0.45 : 1;
+    g += `<rect x="${x - 3}" y="${yv(bEnd)}" width="${bw + 6}" height="${yv(0) - yv(bEnd)}" fill="var(--ghost)" rx="3" opacity="${op}"><title>Logged time only: ${fmt(bEnd)} hrs</title></rect>`;
+    g += `<rect x="${x + 3}" y="${yv(pEnd)}" width="${bw - 6}" height="${yv(0) - yv(pEnd)}" fill="${t.color}" rx="2" opacity="${op}"><title>Following suggestions: ${fmt(pEnd)} hrs</title></rect>`;
+    g += `<text x="${x + bw / 2}" y="${H - 6}" text-anchor="middle" ${row.current ? 'style="font-weight:700;fill:var(--text)"' : ''}>${new Date(row.y, row.m - 1, 1).toLocaleString('en-US', { month: 'short' })}</text>`;
+  });
+  if (t.rule === 'cap') { const y = yv(t.cap);
+    g += `<line x1="${padL}" x2="${W}" y1="${y}" y2="${y}" stroke="var(--bad)" stroke-dasharray="5 4" /><text x="${W - 4}" y="${y - 4}" text-anchor="end" style="fill:var(--bad)">Cap ${fmt(t.cap)}</text>`; }
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Projected month-end balance for ${esc(t.name)}">${g}</svg>`;
+}
+
+function renderProjections(c) {
+  $('#projections').innerHTML = c.projs.map(({ t, r }) => {
+    const isCap = t.rule === 'cap', isReset = t.rule === 'reset';
+    const rows = r.plan.rows;
+    const body = rows.map((x, i) => `<tr class="${x.past ? 'past' : ''}">
+      <td>${monthName(x)}${x.current ? ' <span class="pill muted">Now</span>' : ''}</td>
+      <td class="n">${fmt(x.start)}</td>
+      <td class="n">${fmt(x.planned)}${r.locked[i] > 0 ? ` <span class="pill lock">${fmt(r.locked[i])} locked</span>` : ''}</td>
+      <td class="n ${x.extra > 0.05 ? 'sugg' : ''}">${x.past ? '—' : fmt(x.extra)}</td>
+      <td class="n">${fmt(x.accrued)}</td>
+      ${isCap ? `<td class="n ${x.lost > 0.05 ? 'lost' : ''}">${fmt(x.lost)}</td>` : ''}
+      <td class="n ${x.negative ? 'neg' : ''}">${fmt(x.end)}</td>
+      ${isReset ? `<td class="n ${x.forfeit > 0.05 ? 'lost' : ''}">${x.m === 12 ? fmt(x.forfeit) : ''}</td>` : ''}
+    </tr>`).join('');
+    const tot = k => fmt(rows.reduce((s, x) => s + x[k], 0));
+    return `<section class="card">
+      <div class="proj-head">
+        <h2><span class="dot" style="--c:${t.color}"></span>${esc(t.name)}: ${state.year} month by month</h2>
+        <span class="hint" style="margin:0">${RULES[t.rule]}${r.accrualPerMonth ? ' · +' + fmt(r.accrualPerMonth, 2) + ' hrs/month' : ''}</span>
+      </div>
+      ${chartSVG(t, r)}
+      <div class="legend"><span style="--sw:var(--ghost)">Month-end balance with only logged and locked time</span><span style="--sw:${t.color}">Month-end balance following suggestions</span></div>
+      <div class="table-wrap" style="margin-top:10px">
+        <table>
+          <thead><tr><th>Month</th><th class="n">Start</th><th class="n">Logged / locked</th><th class="n">Suggested</th><th class="n">Earned</th>${isCap ? '<th class="n">Lost to cap</th>' : ''}<th class="n">Month-end</th>${isReset ? '<th class="n">Lost Dec 31</th>' : ''}</tr></thead>
+          <tbody>${body}</tbody>
+          <tfoot><tr><td>Total</td><td></td><td class="n">${tot('planned')}</td><td class="n">${tot('extra')}</td><td class="n">${tot('accrued')}</td>${isCap ? `<td class="n">${tot('lost')}</td>` : ''}<td></td>${isReset ? `<td class="n">${tot('forfeit')}</td>` : ''}</tr></tfoot>
+        </table>
+      </div>
+    </section>`;
+  }).join('');
+}
+
+/* ---------- Header actions ---------- */
+$('#btnSample').addEventListener('click', () => {
+  if (!confirm('Replace everything with the 2026 defaults?')) return;
+  state = defaults2026(); renderAll();
+});
+$('#btnExport').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = `leave-tracker-${state.year}.json`;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+});
+$('#fileImport').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const d = JSON.parse(reader.result);
+      if (!Array.isArray(d.types) || !Array.isArray(d.entries)) throw new Error('bad file');
+      const iso = s => /^\d{4}-\d{2}-\d{2}$/.test(s);
+      const base = defaults2026();
+      state = {
+        version: 2,
+        year: +d.year || base.year,
+        asOf: iso(d.asOf) ? d.asOf : base.asOf,
+        schedule: (() => {
+          const s = d.schedule || {}, tm = v => /^\d{2}:\d{2}$/.test(v);
+          const days = Array.isArray(s.days) ? s.days.map(Number).filter(x => x >= 0 && x <= 6) : [];
+          return { start: tm(s.start) ? s.start : DEFAULT_SCHEDULE.start, end: tm(s.end) ? s.end : DEFAULT_SCHEDULE.end,
+                   lunchMin: Number.isFinite(+s.lunchMin) ? Math.max(0, +s.lunchMin) : DEFAULT_SCHEDULE.lunchMin,
+                   lunchStart: tm(s.lunchStart) ? s.lunchStart : DEFAULT_SCHEDULE.lunchStart, days: days.length ? days : [...DEFAULT_SCHEDULE.days] };
+        })(),
+        hoursPerDay: 8,
+        hoursPerWeek: 40,
+        types: d.types.map((t, i) => ({ id: String(t.id || uid()), name: String(t.name || 'Leave'), balance: +t.balance || 0, accrual: +t.accrual || 0,
+          unit: UNITS[t.unit] ? t.unit : 'month', rule: RULES[t.rule] ? t.rule : 'none', cap: +t.cap || 0, color: t.color || COLORS[i % COLORS.length] })),
+        holidays: Array.isArray(d.holidays) ? d.holidays.filter(h => iso(h.date)).map(h => ({ date: h.date, name: String(h.name || 'Holiday') })) : base.holidays,
+        closure: d.closure && iso(d.closure.start) && iso(d.closure.end)
+          ? { start: d.closure.start, end: d.closure.end, days: d.closure.days || {}, mode: d.closure.mode === 'custom' ? 'custom' : 'auto', custom: d.closure.custom || null }
+          : base.closure,
+        entries: d.entries.filter(p => iso(p.start)).map(p => ({ id: String(p.id || uid()), typeId: String(p.typeId), start: p.start, end: iso(p.end) ? p.end : p.start, hours: +p.hours || 0, note: String(p.note || '') }))
+      };
+      renderAll();
+    } catch (err) { alert('Could not read that file. Make sure it was exported from this tracker.'); }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+});
+
+function renderAll() { syncHours(); renderSettings(); renderTypes(); renderPlanForm(); renderResults(); }
+renderAll();
+</script>
+</body>
+</html>
